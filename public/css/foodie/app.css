@@ -2,10 +2,9 @@
 /* ==========================================================================
    N's custom styles
    ========================================================================== */
-
 body {
     font-size: 1em;
-    background-color: #fafafa;
+    background: green;
 }
 
 h1, h2, h3 {
@@ -89,6 +88,11 @@ ul.side-nav {
 
 .modal.modal-fixed-footer {
     height: 75%;
+}
+.customize-plan-option-btn {
+    display:block;
+    font-size: 3em;
+    text-align: left;
 }
 
 /* ==========================================================================

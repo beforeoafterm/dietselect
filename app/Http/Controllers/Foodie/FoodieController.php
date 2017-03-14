@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\Foodie;
 
+
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Foodie\Auth\VerifiesSms;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Validator;
+use DateTime;
+use App\Allergy;
+use App\FoodiePreference;
 
 class FoodieController extends Controller
 {
@@ -47,9 +52,18 @@ class FoodieController extends Controller
      */
     public function profile()
     {
+        $addresses = DB::table('foodie_address')->where('foodie_id','=',Auth::guard('foodie')->user()->id)->get();
+        $allergies = Allergy::where('foodie_id',Auth::guard('foodie')->user()->id)->get();
+        $preference = FoodiePreference::where('foodie_id',Auth::guard('foodie')->user()->id)->first();
+
+        //print_r($preference); die();
+
         return view('foodie.profile')->with([
             'sms_unverified' => $this->smsIsUnverified(),
             'foodie' => Auth::guard('foodie')->user(),
+            'addresses' => $addresses,
+            'allergies' => $allergies,
+            'preference' => $preference
         ]);
     }
 
@@ -60,27 +74,167 @@ class FoodieController extends Controller
     /**
      * Handle a registration request for the application.
      *
+     *
+     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function saveProfileBasicInfo(Request $request)
+    public function saveProfileBasic(Request $request)
     {
+
+        // You can use the print_r() function to just print out the data that a variable has.
+        // End it with the die(); statement to end the execution of the method.
+        // print_r($request->all());die();
+
         Validator::make($request->all(), [
             'last_name' => 'required|max:100',
             'first_name' => 'required|max:100',
-            'gender' => 'required|max:100',
-            'mobile_number' => 'required|digits:12|unique:foodies',
-            'registration_email' => 'required|email|max:255|unique:foodies,email',
         ])->validate();
 
-        $foodie=Auth::guard('foodies')->user();
-        $foodie->first_name = request["first_name"];
-        $foodie->last_name = request["last_name"];
-        $foodie->gender = request["gender"];
-        $foodie->birthday = request["birthday"];
-        $foodie->username = request["username"];
+
+        $foodie=Auth::guard('foodie')->user();
+        $foodie->first_name = $request['first_name'];
+        $foodie->last_name = $request['last_name'];
+        $foodie->gender = $request['gender'];
+
+
+        // You should place meaningful end messages, so you could easily
+        // know when which part you have reached.
+        // die("We just finished setting the gender of the foodie.");
+
+
+        $foodie->birthday = $request['birthday'];
+        $foodie->username = $request['username'];
+        $foodie->save();
 
         return redirect($this->redirectTo)->with(['status'=>'Successfully updated the info!']);
 
     }
+
+    public function saveProfileAddress (Request $request)
+    {
+
+        Validator::make($request->all(), [
+            'city'=> 'required|max:100',
+           // 'unit' => 'required|max:100',
+            'street' => 'required|max:100',
+           // 'bldg' => 'required|max:100',
+            'brgy' => 'required|max:100',
+            'type' => 'required|max:100',
+           // 'company' => 'required|max:100',
+           // 'landmark' => 'required|max:100',
+            //'remarks' => 'required|max:100',
+        ])->validate();
+
+
+        $result=  DB::table('foodie_address')->insert([
+            'city'=> $request['city'],
+            'unit'=> $request['unit'],
+            'street'=>$request['street'],
+            'bldg'=>$request['bldg'],
+            'brgy'=>$request['brgy'],
+            'type'=>$request['type'],
+            'company'=>$request['company'],
+            'landmark'=>$request['landmark'],
+            'remarks'=>$request['remarks'],
+            'created_at'=>new DateTime(),
+            'updated_at'=>new DateTime(),
+            'foodie_id'=>Auth::guard('foodie')->user()->id,
+
+
+        ]);
+            return redirect($this->redirectTo)->with(['status' => 'Successfully updated the info!']);
+    }
+
+    public function updateAddress(Request $request){
+        Validator::make($request->all(), [
+            'city'=> 'required|max:100',
+            // 'unit' => 'required|max:100',
+            'street' => 'required|max:100',
+            // 'bldg' => 'required|max:100',
+            'brgy' => 'required|max:100',
+            'type' => 'required|max:100',
+            // 'company' => 'required|max:100',
+            // 'landmark' => 'required|max:100',
+            //'remarks' => 'required|max:100',
+        ])->validate();
+    }
+
+    public function deleteAddress(){
+        //
+    }
+
+    public function saveProfileAllergies(Request $request)
+    {
+
+       // print_r($request['others']);die();
+       // print_r($otherAllergiesArray);die();
+
+       foreach ($request->except('others') as $key => $value) {
+
+            if($value=="1") {
+
+                /*~~~ eloquent model method for checking existence ~~~*/
+                if(Allergy::where([
+                    ['foodie_id','=',Auth::guard('foodie')->user()->id],
+                    ['ingredient_id','=',$key]
+                ])->count()==0) {
+
+                   /*~~~ eloquent model method for getting allergies ~~~*/
+                    $allergy=new Allergy;
+                    $allergy->foodie_id = Auth::guard('foodie')->user()->id ;
+                    $allergy->ingredient_id = $key;
+                    $allergy->save();
+
+                   //print_r($allergy);die('set the allergy model');
+                }
+            }
+       }
+
+       $otherAllergiesInput = $request->input('others');
+       if($otherAllergiesInput!="") {
+
+           $otherAllergiesArray = explode(',', $otherAllergiesInput);
+
+           foreach ($otherAllergiesArray as $key => $value) {
+
+               /*~~~ eloquent model method for checking existence ~~~*/
+               if (Allergy::where([
+                       ['foodie_id','=',Auth::guard('foodie')->user()->id],
+                       ['ingredient_id','=',$value]
+                   ])->count()==0) {
+
+                   /*~~~ eloquent model method for getting allergies ~~~*/
+                   $allergy = new Allergy;
+                   $allergy->foodie_id = Auth::guard('foodie')->user()->id;
+                   $allergy->ingredient_id = $value;
+                   $allergy->save();
+               }
+           }
+       }
+
+        return redirect($this->redirectTo)->with(['status' => 'Successfully updated the info!']);
+    }
+
+    public function saveProfilePreferences(Request $request)
+    {
+        $ingredient = $request['foodPref'];
+
+        if(!FoodiePreference::where([
+                ['foodie_id','=',Auth::guard('foodie')->user()->id]
+            ])->exists()){
+
+            $preference = new FoodiePreference;
+            $preference->foodie_id= Auth::guard('foodie')->user()->id;
+            $preference->ingredient = $ingredient;
+            $preference->save();
+        } else {
+            $preference = FoodiePreference::where('foodie_id', Auth::guard('foodie')->user()->id)->get();
+            $preference->ingredient = $ingredient;
+        }
+
+        return redirect($this->redirectTo)->with(['status' => 'Successfully updated the info!']);
+    }
+
+
 }

@@ -1,0 +1,40 @@
+.ingredSelect{
+    display:inline-block;
+    width:75%;
+    float:left;
+}
+.ingredGramsContainer{
+    display:inline-block;
+    width:20%;
+    float:right;
+}
+
+.ingredSelectAdd{
+    width:75%;
+    height:54px;
+}
+
+.ingredGramsAdd{
+    width:20%
+}
+
+/*.ingredLabel{*/
+    /*display:inline-block;*/
+    /*width:75%;*/
+    /*float:left;*/
+/*}*/
+/*.gramLabel{*/
+    /*display:inline-block;*/
+    /*width:20%;*/
+    /*float:right;*/
+/*}*/
+
+.addIngred{
+    display: block;
+}
+
+
+
+/*.inputBehind{*/
+    /*z-index: 997;*/
+/*}*/

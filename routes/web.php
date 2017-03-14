@@ -12,6 +12,16 @@
 */
 
 Route::get('/', 'PagesController@welcome')->name('welcome');
+Route::get('meal/planner', function (){
+    $plan = \App\Plan::where('chef_id',1)->first();
+    $mealPlans=$plan->mealplans()->get();
+    return view('chef.meal_planner', compact('mealPlans'));
+});
+
+Route::get('compute', function (\Illuminate\Http\Request $request){
+    $grams = $request['grams'] * 0.01;
+    dd($grams);
+});
 
 Route::group(['prefix' => 'foodie'], function () {
     Route::get('/', 'Foodie\FoodieController@index')->name('foodie');
@@ -28,13 +38,27 @@ Route::group(['prefix' => 'foodie'], function () {
     Route::get('password/reset/{token}', 'Foodie\Auth\ResetPasswordController@showResetForm')->name('foodie.reset.password');
 
     Route::get('profile', 'Foodie\FoodieController@profile')->name('foodie.profile');
-    Route::post('profile/save', 'Foodie\FoodieController@saveProfileBasicInfo')->name('foodie.profile.basic');
+    Route::post('profile/save', 'Foodie\FoodieController@saveProfileBasic')->name('foodie.profile.basic');
+    Route::post('profile/address', 'Foodie\FoodieController@saveProfileAddress')->name('foodie.profile.address');
+    Route::post('profile/address/update', 'Foodie\FoodieController@updateProfileAddress')->name('foodie.address.update');
+    Route::post('profile/address/delete', 'Foodie\FoodieController@deleteProfileAddress')->name('foodie.address.delete');
+    Route::post('profile/allergies', 'Foodie\FoodieController@saveProfileAllergies')->name('foodie.profile.allergies');
+    Route::post('profile/preferences', 'Foodie\FoodieController@saveProfilePreferences')->name('foodie.profile.preferences');
+
 
     Route::get('register', 'Foodie\Auth\RegisterController@showRegistrationForm')->name('foodie.register.show');
     Route::post('register', 'Foodie\Auth\RegisterController@register')->name('foodie.register');
 
     Route::post('verify', 'Foodie\Auth\VerificationController@verifySms')->name('foodie.verify');
     Route::post('verify/send', 'Foodie\Auth\VerificationController@sendNewVerificationCode')->name('foodie.verify.send');
+
+    Route::get('chefs', 'Foodie\FoodieMealPlanController@viewChefs')->name('foodie.chef.show');
+    Route::get('chefs/plan/{id}', 'Foodie\FoodieMealPlanController@viewChefsPlans')->name('foodie.chef.plan');
+    Route::get('chefs/meal/{plan}','Foodie\FoodieMealPlanController@viewChefsMeals')->name('foodie.chef.meal');
+    Route::get('chefs/customize/{meal}','Foodie\FoodieMealPlanController@customizeChefsMeals')->name('foodie.meal.custom');
+
+    Route::get('order/plan/{plan}', 'Foodie\FoodieOrderPlanController@index')->name('foodie.order.review');
+
 });
 
 Route::group(['prefix' => 'chef'], function () {
@@ -60,4 +84,15 @@ Route::group(['prefix' => 'chef'], function () {
 
     Route::post('verify/sms', 'Chef\Auth\VerificationController@verifySms')->name('chef.verify.sms');
     Route::post('verify/sms/send', 'Chef\Auth\VerificationController@sendNewVerificationCode')->name('chef.verify.sms.send');
+
+    Route::get('plan','Chef\MealPlanController@getMealPlanPage')->name('chef.plan');
+    Route::post('plan/create','Chef\MealPlanController@createPlan')->name('chef.plan.create');
+    Route::get('plan/{plan}/mealsTable','Chef\MealPlanController@prepareMealsPage')->name('chef.plan.table');
+    Route::get('/getIngredJson','Chef\MealPlanController@getIngredJson')->name('chef.plan.autocomplete');
+    Route::get('{meal}/getIngredCount','Chef\MealPlanController@getIngredCount')->name('chef.plan.number');
+    Route::post('plan/{plan}/createMeal', 'Chef\MealPlanController@setMeal')->name('chef.meal.create');
+    Route::post('plan/update/{meal}', 'Chef\MealPlanController@updateMeal')->name('chef.meal.update');
+    Route::post('plan/delete/{meal}', 'Chef\MealPlanController@deleteMeal')->name('chef.meal.delete');
+
+
 });
